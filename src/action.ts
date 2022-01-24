@@ -77,6 +77,7 @@ export async function getProjectData(
 
   for (const project of projects) {
     const columns = (await octokit.rest.projects.listColumns({project_id: project.id})).data || [];
+    core.info(project.name);
     if (possible?.name === project.name)
       columns.sort(c => (c.name === possible.columnName ? -1 : 1));
 
