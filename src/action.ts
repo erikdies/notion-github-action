@@ -65,6 +65,7 @@ export async function getProjectData(
   options: GetProjectDataOptions
 ): Promise<ProjectData | undefined> {
   const {octokit, githubRepo, issueNumber, possible} = options;
+  core.info("Trying to get project data")
 
   const projects =
     (
