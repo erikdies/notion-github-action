@@ -26121,8 +26121,8 @@ function parsePropertiesFromPayload(options) {
             Updated: properties.date(payload.issue.updated_at),
             ID: properties.number(payload.issue.id),
             Link: properties.url(payload.issue.html_url),
-            Project: properties.text((projectData === null || projectData === void 0 ? void 0 : projectData.name) || ''),
-            'Project Column': properties.text((projectData === null || projectData === void 0 ? void 0 : projectData.columnName) || ''),
+            Project: properties.text((projectData === null || projectData === void 0 ? void 0 : projectData.name) || 'something'),
+            'Project Column': properties.text((projectData === null || projectData === void 0 ? void 0 : projectData.columnName) || 'icebox'),
         };
         return result;
     });
