@@ -65,7 +65,7 @@ export async function getProjectData(
   options: GetProjectDataOptions
 ): Promise<ProjectData | undefined> {
   const {octokit, githubRepo, issueNumber, possible} = options;
-  core.info("Trying to get project data")
+  core.info(`Trying to get project data`)
 
   const projects =
     (
@@ -109,7 +109,7 @@ interface IssueOpenedOptions {
 async function handleIssueOpened(options: IssueOpenedOptions) {
   const {notion, payload} = options;
 
-  core.info(`Creating page for DELETEME!!! issue #${payload.issue.number}`);
+  core.info(`Creating page for issue #${payload.issue.number}`);
 
   await notion.client.pages.create({
     parent: {

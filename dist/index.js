@@ -26130,7 +26130,7 @@ function parsePropertiesFromPayload(options) {
 function getProjectData(options) {
     return action_awaiter(this, void 0, void 0, function* () {
         const { octokit, githubRepo, issueNumber, possible } = options;
-        core.info("Trying to get project data");
+        core.info(`Trying to get project data`);
         const projects = (yield octokit.rest.projects.listForRepo({
             owner: githubRepo.split('/')[0],
             repo: githubRepo.split('/')[1],
@@ -26155,7 +26155,7 @@ function getProjectData(options) {
 function handleIssueOpened(options) {
     return action_awaiter(this, void 0, void 0, function* () {
         const { notion, payload } = options;
-        core.info(`Creating page for DELETEME!!! issue #${payload.issue.number}`);
+        core.info(`Creating page for issue #${payload.issue.number}`);
         yield notion.client.pages.create({
             parent: {
                 database_id: notion.databaseId,
