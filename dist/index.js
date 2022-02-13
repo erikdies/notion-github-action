@@ -26009,8 +26009,12 @@ function getGitHubIssues(octokit, githubRepo) {
 }
 function getIssuesNotInNotion(issuePageIds, issues) {
     const pagesToCreate = [];
+    issuePageIds.forEach((value, key) => {
+        core.info(`The key: ${key}, value: ${value}`);
+    });
     for (const issue of issues) {
         pagesToCreate.push(issue);
+        core.info('Found an issue period ${issue.number}');
         if (!issuePageIds.has(issue.number)) {
             // pagesToCreate.push(issue);
             core.info('Found an issue to exclude ${issue.number}');
