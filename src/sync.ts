@@ -93,8 +93,10 @@ async function getGitHubIssues(octokit: Octokit, githubRepo: string): Promise<Is
 function getIssuesNotInNotion(issuePageIds: Map<number, string>, issues: Issue[]): Issue[] {
   const pagesToCreate: Issue[] = [];
   for (const issue of issues) {
+    pagesToCreate.push(issue);
     if (!issuePageIds.has(issue.number)) {
-      pagesToCreate.push(issue);
+      // pagesToCreate.push(issue);
+      core.info('Found an issue to exclude ${issue.number}')
     }
   }
   return pagesToCreate;
