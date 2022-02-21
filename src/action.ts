@@ -15,6 +15,7 @@ interface PayloadParsingOptions {
   octokit: Octokit;
   possibleProject?: ProjectData;
 }
+
 async function parsePropertiesFromPayload(options: PayloadParsingOptions): Promise<CustomValueMap> {
   const {payload, octokit, possibleProject} = options;
 
@@ -55,12 +56,14 @@ interface ProjectData {
   name?: string;
   columnName?: string;
 }
+
 interface GetProjectDataOptions {
   octokit: Octokit;
   githubRepo: string;
   issueNumber: number;
   possible?: ProjectData;
 }
+
 export async function getProjectData(
   options: GetProjectDataOptions
 ): Promise<ProjectData | undefined> {

@@ -7,9 +7,9 @@ import {CustomValueMap, properties} from './properties';
 import {NumberPropertyValue, Page} from '@notionhq/client/build/src/api-types';
 import {getProjectData} from './action';
 
-type PageIdAndIssueNumber = {
+type PageIdAndIssueID = {
   pageId: string;
-  issueNumber: number;
+  issueID: number;
 };
 
 export async function createIssueMapping(
@@ -19,10 +19,10 @@ export async function createIssueMapping(
   const issuePageIds = new Map<number, string>();
   const issuesAlreadyInNotion: {
     pageId: string;
-    issueNumber: number;
+    issueID: number;
   }[] = await getIssuesAlreadyInNotion(notion, databaseId);
-  for (const {pageId, issueNumber} of issuesAlreadyInNotion) {
-    issuePageIds.set(issueNumber, pageId);
+  for (const {pageId, issueID} of issuesAlreadyInNotion) {
+    issuePageIds.set(issueID, pageId);
   }
   return issuePageIds;
 }
@@ -43,7 +43,7 @@ export async function syncNotionDBWithGitHub(
 async function getIssuesAlreadyInNotion(
   notion: Client,
   databaseId: string
-): Promise<PageIdAndIssueNumber[]> {
+): Promise<PageIdAndIssueID[]> {
   core.info('Checking for issues already in the database...');
   const pages = [];
   let cursor = undefined;
@@ -62,10 +62,10 @@ async function getIssuesAlreadyInNotion(
     cursor = next_cursor;
   }
   return pages.map(page => {
-    const num = <NumberPropertyValue>page.properties['Number'];
+    const num = <NumberPropertyValue>page.properties['ID'];
     return {
       pageId: page.id,
-      issueNumber: num.number,
+      issueID: num.number,
     };
   });
 }
@@ -96,10 +96,10 @@ function getIssuesNotInNotion(issuePageIds: Map<number, string>, issues: Issue[]
     core.info(`The key: ${key}, value: ${value}`);
   });
   for (const issue of issues) {
-    pagesToCreate.push(issue);
+    // pagesToCreate.push(issue);
     core.info(`Found an issue period ${issue.number}`);
-    if (!issuePageIds.has(issue.number)) {
-      // pagesToCreate.push(issue);
+    if (!issuePageIds.has(issue.id)) {
+      pagesToCreate.push(issue);
       core.info(`Found an issue to exclude ${issue.number}`);
     }
   }

@@ -25933,8 +25933,8 @@ function createIssueMapping(notion, databaseId) {
     return __awaiter(this, void 0, void 0, function* () {
         const issuePageIds = new Map();
         const issuesAlreadyInNotion = yield getIssuesAlreadyInNotion(notion, databaseId);
-        for (const { pageId, issueNumber } of issuesAlreadyInNotion) {
-            issuePageIds.set(issueNumber, pageId);
+        for (const { pageId, issueID } of issuesAlreadyInNotion) {
+            issuePageIds.set(issueID, pageId);
         }
         return issuePageIds;
     });
@@ -25967,10 +25967,10 @@ function getIssuesAlreadyInNotion(notion, databaseId) {
             cursor = next_cursor;
         }
         return pages.map(page => {
-            const num = page.properties['Number'];
+            const num = page.properties['ID'];
             return {
                 pageId: page.id,
-                issueNumber: num.number,
+                issueID: num.number,
             };
         });
     });
@@ -26013,10 +26013,10 @@ function getIssuesNotInNotion(issuePageIds, issues) {
         core.info(`The key: ${key}, value: ${value}`);
     });
     for (const issue of issues) {
-        pagesToCreate.push(issue);
+        // pagesToCreate.push(issue);
         core.info(`Found an issue period ${issue.number}`);
-        if (!issuePageIds.has(issue.number)) {
-            // pagesToCreate.push(issue);
+        if (!issuePageIds.has(issue.id)) {
+            pagesToCreate.push(issue);
             core.info(`Found an issue to exclude ${issue.number}`);
         }
     }
