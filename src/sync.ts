@@ -63,6 +63,7 @@ async function getIssuesAlreadyInNotion(
   }
   return pages.map(page => {
     const num = <NumberPropertyValue>page.properties['ID'];
+    core.info(`Make sure this propery is ok: ${num.number}`);
     return {
       pageId: page.id,
       issueID: num.number,
@@ -97,10 +98,10 @@ function getIssuesNotInNotion(issuePageIds: Map<number, string>, issues: Issue[]
   });
   for (const issue of issues) {
     // pagesToCreate.push(issue);
-    core.info(`Found an issue period ${issue.number}`);
+    core.info(`Found an issue period ${issue.number}, ${issue.number}`);
     if (!issuePageIds.has(issue.id)) {
       pagesToCreate.push(issue);
-      core.info(`Found an issue to exclude ${issue.number}`);
+      core.info(`Found an issue to Add! ${issue.number}, ${issue.number}`);
     }
   }
   return pagesToCreate;
