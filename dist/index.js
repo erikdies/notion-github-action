@@ -25968,6 +25968,7 @@ function getIssuesAlreadyInNotion(notion, databaseId) {
         }
         return pages.map(page => {
             const num = page.properties['ID'];
+            core.info(`Make sure this propery is ok: ${num.number}`);
             return {
                 pageId: page.id,
                 issueID: num.number,
@@ -26014,10 +26015,10 @@ function getIssuesNotInNotion(issuePageIds, issues) {
     });
     for (const issue of issues) {
         // pagesToCreate.push(issue);
-        core.info(`Found an issue period ${issue.number}`);
+        core.info(`Found an issue period ${issue.number}, ${issue.number}`);
         if (!issuePageIds.has(issue.id)) {
             pagesToCreate.push(issue);
-            core.info(`Found an issue to exclude ${issue.number}`);
+            core.info(`Found an issue to add ${issue.number}, ${issue.number}`);
         }
     }
     return pagesToCreate;
@@ -26101,7 +26102,7 @@ function removeHTML(text) {
     return (_a = text === null || text === void 0 ? void 0 : text.replace(/<.*>.*<\/.*>/g, '')) !== null && _a !== void 0 ? _a : '';
 }
 function parsePropertiesFromPayload(options) {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     return action_awaiter(this, void 0, void 0, function* () {
         const { payload, octokit, possibleProject } = options;
         const parsedBody = removeHTML(payload.issue.body);
@@ -26127,8 +26128,8 @@ function parsePropertiesFromPayload(options) {
             Updated: properties.date(payload.issue.updated_at),
             ID: properties.number(payload.issue.id),
             Link: properties.url(payload.issue.html_url),
-            Project: properties.text((projectData === null || projectData === void 0 ? void 0 : projectData.name) || 'something'),
-            'Project Column': properties.text((projectData === null || projectData === void 0 ? void 0 : projectData.columnName) || 'icebox'),
+            Project: properties.text((_h = projectData === null || projectData === void 0 ? void 0 : projectData.name) !== null && _h !== void 0 ? _h : ''),
+            'Project Column': properties.text((_j = projectData === null || projectData === void 0 ? void 0 : projectData.columnName) !== null && _j !== void 0 ? _j : ''),
         };
         return result;
     });
