@@ -101,7 +101,7 @@ function getIssuesNotInNotion(issuePageIds: Map<number, string>, issues: Issue[]
     core.info(`Found an issue period ${issue.number}, ${issue.number}`);
     if (!issuePageIds.has(issue.id)) {
       pagesToCreate.push(issue);
-      core.info(`Found an issue to Add! ${issue.number}, ${issue.number}`);
+      core.info(`Found an issue to add: ${issue.number}, ${issue.number}`);
     }
   }
   return pagesToCreate;
