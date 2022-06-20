@@ -5,6 +5,9 @@ import type {WebhookPayload} from '@actions/github/lib/interfaces';
 import {CustomValueMap, properties} from './properties';
 import {createIssueMapping, syncNotionDBWithGitHub} from './sync';
 import {Octokit} from 'octokit';
+import {markdownToRichText} from '@tryfabric/martian';
+import {CustomTypes, RichTextItemResponse} from './api-types';
+import {CreatePageParameters} from '@notionhq/client/build/src/api-endpoints';
 
 function removeHTML(text?: string): string {
   return text?.replace(/<.*>.*<\/.*>/g, '') ?? '';
@@ -19,8 +22,6 @@ interface PayloadParsingOptions {
 async function parsePropertiesFromPayload(options: PayloadParsingOptions): Promise<CustomValueMap> {
   const {payload, octokit, possibleProject} = options;
 
-  const parsedBody = removeHTML(payload.issue.body);
-
   payload.issue.labels?.map(label => label.color);
 
   const projectData = await getProjectData({
@@ -30,13 +31,15 @@ async function parsePropertiesFromPayload(options: PayloadParsingOptions): Promi
     possible: possibleProject,
   });
 
+  core.debug(`Current project data: ${JSON.stringify(projectData, null, 2)}`);
+
   const result: CustomValueMap = {
     Name: properties.title(payload.issue.title),
     Status: properties.getStatusSelectOption(payload.issue.state!),
     Organization: properties.text(payload.organization?.login ?? ''),
     Repository: properties.text(payload.repository.name),
     Number: properties.number(payload.issue.number),
-    Body: properties.text(parsedBody),
+    Body: properties.richText(parseBodyRichText(payload.issue.body)),
     Assignees: properties.multiSelect(payload.issue.assignees.map(assignee => assignee.login)),
     Milestone: properties.text(payload.issue.milestone?.title ?? ''),
     Labels: properties.multiSelect(payload.issue.labels?.map(label => label.name) ?? []),
@@ -68,7 +71,7 @@ export async function getProjectData(
   options: GetProjectDataOptions
 ): Promise<ProjectData | undefined> {
   const {octokit, githubRepo, issueNumber, possible} = options;
-  core.info(`Trying to get project data`);
+  core.info('Trying to get project data');
 
   const projects =
     (
@@ -78,6 +81,8 @@ export async function getProjectData(
       })
     ).data || [];
   projects.sort(p => (p.name === possible?.name ? -1 : 1));
+
+  core.debug(`Found ${projects.length} projects.`);
 
   for (const project of projects) {
     const columns = (await octokit.rest.projects.listColumns({project_id: project.id})).data || [];
@@ -98,6 +103,26 @@ export async function getProjectData(
   }
 
   return undefined;
+}
+
+export function parseBodyRichText(body: string) {
+  try {
+    return markdownToRichText(removeHTML(body)) as CustomTypes.RichText['rich_text'];
+  } catch {
+    return [];
+  }
+}
+
+function getBodyChildrenBlocks(body: string): Exclude<CreatePageParameters['children'], undefined> {
+  // We're currently using only one paragraph block, but this could be extended to multiple kinds of blocks.
+  return [
+    {
+      type: 'paragraph',
+      paragraph: {
+        text: parseBodyRichText(body),
+      },
+    },
+  ];
 }
 
 interface IssueOpenedOptions {
@@ -122,6 +147,7 @@ async function handleIssueOpened(options: IssueOpenedOptions) {
       payload,
       octokit: options.octokit,
     }),
+    children: getBodyChildrenBlocks(payload.issue.body),
   });
 }
 
@@ -135,7 +161,7 @@ interface IssueEditedOptions {
 }
 
 async function handleIssueEdited(options: IssueEditedOptions) {
-  const {notion, payload} = options;
+  const {notion, payload, octokit} = options;
 
   core.info(`Querying database for page with github id ${payload.issue.id}`);
 
@@ -150,17 +176,73 @@ async function handleIssueEdited(options: IssueEditedOptions) {
     page_size: 1,
   });
 
-  if (query.results.length === 0) {
-    core.warning(`Could not find page with github id ${payload.issue.id}`);
-    return;
+  const bodyBlocks = getBodyChildrenBlocks(payload.issue.body);
+
+  if (query.results.length > 0) {
+    const pageId = query.results[0].id;
+
+    core.info(`Query successful: Page ${pageId}`);
+    core.info(`Updating page for issue #${payload.issue.number}`);
+
+    await notion.client.pages.update({
+      page_id: pageId,
+      properties: await parsePropertiesFromPayload({payload, octokit}),
+    });
+
+    const existingBlocks = (
+      await notion.client.blocks.children.list({
+        block_id: pageId,
+      })
+    ).results;
+
+    const overlap = Math.min(bodyBlocks.length, existingBlocks.length);
+
+    await Promise.all(
+      bodyBlocks.slice(0, overlap).map((block, index) =>
+        notion.client.blocks.update({
+          block_id: existingBlocks[index].id,
+          ...block,
+        })
+      )
+    );
+
+    if (bodyBlocks.length > existingBlocks.length) {
+      await notion.client.blocks.children.append({
+        block_id: pageId,
+        children: bodyBlocks.slice(overlap),
+      });
+    } else if (bodyBlocks.length < existingBlocks.length) {
+      await Promise.all(
+        existingBlocks
+          .slice(overlap)
+          .map(block => notion.client.blocks.delete({block_id: block.id}))
+      );
+    }
+  } else {
+    core.warning(`Could not find page with github id ${payload.issue.id}, creating a new one`);
+
+    await notion.client.pages.create({
+      parent: {
+        database_id: notion.databaseId,
+      },
+      properties: await parsePropertiesFromPayload({payload, octokit}),
+      children: bodyBlocks,
+    });
   }
 
-  const result = query.results[0],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = query.results[0] as any,
     pageId = result.id,
-    possible: ProjectData = {
-      name: (result.properties as CustomValueMap).Project.rich_text[0].plain_text,
-      columnName: (result.properties as CustomValueMap)['Project Column'].rich_text[0].plain_text,
-    };
+    possible: ProjectData | undefined = result
+      ? {
+          name: ((result.properties as CustomValueMap).Project.rich_text[0] as RichTextItemResponse)
+            ?.plain_text,
+          columnName: (
+            (result.properties as CustomValueMap)['Project Column']
+              .rich_text[0] as RichTextItemResponse
+          )?.plain_text,
+        }
+      : undefined;
 
   core.info(`Query successful: Page ${pageId}`);
   core.info(`Updating page for issue #${payload.issue.number}`);
