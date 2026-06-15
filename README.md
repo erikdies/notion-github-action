@@ -8,7 +8,7 @@ Connect your GitHub issues to a Notion database.
 
 ---
 
-## Quick Start
+# Quick Start
 
 1. [Create a new internal Notion integration](https://www.notion.so/my-integrations) and note the value of the Internal Integration Token.
 2. In your GitHub repository, go to `Settings` > `Secrets`, and add a `New repository secret`. Set the `Name` to `NOTION_TOKEN` and the `Value` to the Internal Integration Token you created in the previous step.
