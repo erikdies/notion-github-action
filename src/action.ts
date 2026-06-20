@@ -18,6 +18,7 @@ interface PayloadParsingOptions {
   octokit: Octokit;
   possibleProject?: ProjectData;
 }
+
 async function parsePropertiesFromPayload(options: PayloadParsingOptions): Promise<CustomValueMap> {
   const {payload, octokit, possibleProject} = options;
 
@@ -47,8 +48,8 @@ async function parsePropertiesFromPayload(options: PayloadParsingOptions): Promi
     Updated: properties.date(payload.issue.updated_at),
     ID: properties.number(payload.issue.id),
     Link: properties.url(payload.issue.html_url),
-    Project: properties.text(projectData?.name || ''),
-    'Project Column': properties.text(projectData?.columnName || ''),
+    Project: properties.text(projectData?.name ?? ''),
+    'Project Column': properties.text(projectData?.columnName ?? ''),
   };
 
   return result;
@@ -58,16 +59,19 @@ interface ProjectData {
   name?: string;
   columnName?: string;
 }
+
 interface GetProjectDataOptions {
   octokit: Octokit;
   githubRepo: string;
   issueNumber: number;
   possible?: ProjectData;
 }
+
 export async function getProjectData(
   options: GetProjectDataOptions
 ): Promise<ProjectData | undefined> {
   const {octokit, githubRepo, issueNumber, possible} = options;
+  core.info('Trying to get project data');
 
   const projects =
     (
